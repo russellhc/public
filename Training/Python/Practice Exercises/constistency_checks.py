@@ -3,7 +3,7 @@ import pandas as pd
 data = {
     'employee_id': [1, 2, 3, 4, 5],
     'name': ['Alice', 'Bob', 'Charlie', 'David', 'Ella'],
-    'email': ['alice@example.com', 'bob@example.com', 'charlie@example.com', 'david@example.com', 'ella@example']
+    'email': ['alice@example.com', 'bob@example.com', 'bob@example.com', 'david@example.com', 'ella@example']
 }
 
 df = pd.DataFrame(data)
