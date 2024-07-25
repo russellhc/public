@@ -7,7 +7,7 @@ os.chdir(dname)
 
 # Set polars display options to avoid truncation
 # pl.Config.set_tbl_cols(100)  # Increase the number of displayed columns
-# pl.Config.set_tbl_rows(100)  # Increase the number of displayed rows
+pl.Config.set_tbl_rows(15)  # Increase the number of displayed rows
 pl.Config.set_fmt_str_lengths(100)  # Increase the string length
 
 # Load the CSV file - polars
@@ -16,9 +16,12 @@ pl.Config.set_fmt_str_lengths(100)  # Increase the string length
 
 # for testing. comment out when loading proper file.
 df = pl.DataFrame({
-    "A": ["foo", "bar", "foo", "baz", "foo", "bar", "foo", "coo"],
-    "B": [1, 2, 1, 3, 1, 2, 1, 9],
-    "C": [10, 20, 10, 30, 40, 50, 60, 99]
+    "A": ["foo", "bar", "foo", "baz", "foo", "bar", "foo", "coo", None, "grr", "lax", "lax"],
+    "B": [1, 2, 1, 3, 1, 2, None, 9, 5, 4, None,  None],
+    "C": [10, 20, 10, 30, 40, 50, 60, 99, 22, None, 7, 7]
+})
+df2 = pl.DataFrame({
+    "C": [99, 22, 7]
 })
 
 # print total row count for dataframe
@@ -43,6 +46,13 @@ if duplicate_rows > 0:
     duplicate_rows_values = df.filter(df.is_duplicated())
     print(duplicate_rows_values.head(10)) # limiting to 10 
 
+# removing duplicate rows
+print("\nRemoving duplicate rows")
+print(f"Old total row count: " + str(total_rows))
+clean_df = df.unique(keep="last", maintain_order=True)
+print(f"New total row count: " + str(clean_df.height))
+print(f"Rows removed: " + str(total_rows - clean_df.height))
+
 # Check for duplicate values in each column
 print("\nchecking for duplicates in individual columns:")
 # loop on columns
@@ -60,7 +70,6 @@ for c in df.columns:
 # look for duplicates across column combinations
 print("\nchecking for duplicates in combinations of columns:")
 # set columns to check for duplicates over
-# column_spec = ["submission_key","submission_date","first_name","last_name","email","ip_address"]
 column_spec = ["A","B"]
 print(f"Duplicates based on columns {column_spec}:")
 # count duplicates and filter to them
@@ -72,13 +81,6 @@ dups = (
 )
 # Display the duplicates
 print(dups)
-
-# removing duplicate rows
-print("\nRemoving duplicate rows")
-print(f"Old total row count: " + str(total_rows))
-clean_df = df.unique(keep="last", maintain_order=True)
-print(f"New total row count: " + str(clean_df.height))
-print(f"Rows removed: " + str(total_rows - clean_df.height))
 
 # removing duplicate rows based on column combination
 print("\nRemoving duplicate rows based on column combination")
@@ -93,10 +95,31 @@ print(f"Old total row count: " + str(total_rows))
 #     )
 #    .filter(pl.col("dup_count") == 1)
 # )
-clean_df_columns = df.unique(subset=["A", "B"], keep="first", maintain_order=True)
+clean_df_columns = df.unique(subset=["A", "B"], keep="first", maintain_order=True) # cannot seem to parameterise the subset columns without it throwing an error
 print(f"New total row count: " + str(clean_df_columns.height))
 print(f"Rows removed: " + str(total_rows - clean_df_columns.height))
 print(clean_df_columns)
+
+
+# add a derived column to the dataframe
+print("\nAdd a derived column to the dataframe")
+df_add_column = df.with_columns(
+    (pl.col("C") * 5).alias("D")
+)
+print(df_add_column)
+
+
+# filter out rows based on values in another dataframe
+print("\nFilter dataframe based on values in another dataframe")
+filter_values = df2.get_column("C").to_list()
+# df_filtered = df.filter(~pl.col("C").is_in(filter_values)) # removes nulls as well...
+df_filtered2 = df.join(df2, on="C", how="anti") # does not remove nulls
+print("Original dataframe:")
+print(df)
+#print(df_filtered)
+print("Filtered dataframe:")
+print(df_filtered2)
+
 
 # # Examine data types of each column
 # data_types = df.dtypes
