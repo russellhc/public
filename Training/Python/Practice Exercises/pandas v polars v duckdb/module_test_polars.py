@@ -75,6 +75,7 @@ def load_nested_json_to_table(json_file, db_conn, db_table):
         # Create a cursor object
         #cursor = conn.cursor()
 
+        # insert
         conn.executemany("INSERT INTO " + db_table + " (Name, Age, City, Salary) VALUES (?, ?, ?, ?)", data_tuples)
 
 
@@ -164,6 +165,73 @@ def load_nested_json_to_table_slow(json_file, db_conn, db_table):
         #print('quering table:')
         #df = pd.read_sql('SELECT * FROM test', conn)
         #print(df.all)
+
+        # close the connection
+        conn.close()
+    except Exception as e:
+        # Handle any other exceptions
+        print(f"An error occurred:")
+        print(f"{e}")
+        # close the connection
+        conn.close()
+        return []
+    
+def load_csv_to_table(file_name, db_conn, db_table):
+    try:
+        # read csv
+        df = pl.read_csv(file_name)
+
+        # Connect to the SQLite database (or create it if it doesn't exist)
+        conn = sqlite3.connect(db_conn)
+        print('connect to db')
+        # Get current date and time
+        current_datetime = datetime.now()
+        # Format the datetime object into a string
+        formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+        # Print the formatted timestamp
+        print(f'Detailed Timestamp: {formatted_datetime}')
+
+        # Create a cursor object
+        cursor = conn.cursor()
+
+        # create table
+        create_query = '''create table if not exists uber_data (
+                                driver_id INT NOT NULL,
+                                ride_key VARCHAR(255) NOT NULL,
+                                fare_amount DECIMAL(10, 2) NOT NULL,
+                                pickup_datetime TIMESTAMP NOT NULL,
+                                pickup_longitude DECIMAL(9, 6) NOT NULL,
+                                pickup_latitude DECIMAL(9, 6) NOT NULL,
+                                dropoff_longitude DECIMAL(9, 6),
+                                dropoff_latitude DECIMAL(9, 6),
+                                passenger_count INT NOT NULL
+                            );'''
+
+        # execute create statement    
+        cursor.execute(create_query)
+
+        # convert to tuples so batch load works
+        data_tuples = df.to_numpy().tolist()
+
+        # insert
+        conn.executemany("INSERT INTO " + db_table + " (driver_id,ride_key,fare_amount,pickup_datetime,pickup_longitude,pickup_latitude,dropoff_longitude,dropoff_latitude,passenger_count) VALUES (?,?,?,?,?,?,?,?,?)", data_tuples)
+
+        # Commit the changes 
+        conn.commit()
+
+        # Get current date and time
+        current_datetime = datetime.now()
+        # Format the datetime object into a string
+        formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+        # Print the formatted timestamp
+        print(f'Detailed Timestamp: {formatted_datetime}')
+
+        # Verify by querying the table
+        #print('quering table:')
+        # Query to count the rows in the target table
+        cursor.execute("select count(*) from " + db_table)
+        row_count = cursor.fetchone()[0]
+        print(row_count)
 
         # close the connection
         conn.close()

@@ -23,6 +23,10 @@ df = pl.DataFrame({
 df2 = pl.DataFrame({
     "C": [99, 22, 7]
 })
+df3 = pl.DataFrame({
+    "A": ["foo", "bar", "baz", "coo", "grr", "lax"],
+    "name": ["David", "Gary", "Michelle", "Rose", "George", "Steve"]
+})
 
 # print total row count for dataframe
 total_rows = df.height
@@ -108,10 +112,21 @@ df_add_column = df.with_columns(
 )
 print(df_add_column)
 
+# remove the column
+print("\nRemove the column from the dataframe")
+df_add_column = df_add_column.drop("D")
+print(df_add_column)
+
+
+# joins
+# add a column from another dataframe
+print("\nJoin on another dataframe to add a column")
+df_joined = df.join(df3, on="A", how="left")
+print(df_joined)
 
 # filter out rows based on values in another dataframe
 print("\nFilter dataframe based on values in another dataframe")
-filter_values = df2.get_column("C").to_list()
+# filter_values = df2.get_column("C").to_list()
 # df_filtered = df.filter(~pl.col("C").is_in(filter_values)) # removes nulls as well...
 df_filtered2 = df.join(df2, on="C", how="anti") # does not remove nulls
 print("Original dataframe:")
